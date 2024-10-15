@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
-use App\Http\Controllers\Controller;
-use Illuminate\Auth\Events\Validated;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule; 
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Auth\Events\Validated;
 
 class CompanyController extends Controller
 {
@@ -16,6 +18,8 @@ class CompanyController extends Controller
      */
     public function index()
     {
+        // \Auth::user()->assignRole('writer', 'admin');
+        // \Auth::user()->assignRole('Super Admin');
         $companies = Company::all();
         return view('company.index',compact('companies'));
     }
@@ -47,7 +51,7 @@ class CompanyController extends Controller
 
         // dd($validated);
         Company::create($validated);
-        return redirect(route('company.index'));
+        return redirect(route('company.index'))->with('alert-success','Created Succesfully');;
     }
 
     /**
@@ -69,7 +73,7 @@ class CompanyController extends Controller
      */
     public function edit(Company $company)
     {
-        return $company;
+        return view('company.edit',compact('company'));
     }
 
     /**
@@ -81,7 +85,19 @@ class CompanyController extends Controller
      */
     public function update(Request $request, Company $company)
     {
-        //
+        $validated =$request->validate([
+            'name' => 'required|min:4',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('companies')->ignore($company->id),
+            ],
+            'mobile' => 'required',
+        ]);
+
+        // dd($validated);
+        $company->update($validated);
+        return redirect(route('company.index'))->with('alert-success','Update Succesfully');
     }
 
     /**
@@ -92,6 +108,7 @@ class CompanyController extends Controller
      */
     public function destroy(Company $company)
     {
-        //
+        $company->delete();
+        return redirect(route('company.index'))->with('alert-danger','Delete Succesfully');;
     }
 }
